@@ -19,68 +19,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
-
-      - name: Checkout submodules
-        shell: bash
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-
-      - name: Set up Node.js ${{ env.node-version }}
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
-        with:
-          node-version: ${{ env.node-version }}
-          cache: 'yarn'
-          cache-dependency-path: '**/yarn.lock'
-
-      - name: Set up Python ${{ env.python-version }}
-        uses: actions/setup-python@98f2ad02fd48d057ee3b4d4f66525b231c3e52b6 # tag=v3.1.2
-        with:
-          python-version: ${{ env.python-version }}
-          cache: 'pip'
-
-      - name: Init platform
-        id: init
-        shell: bash
-        run: |
-          git config --global core.autocrlf false
-          git config --global core.symlinks true
-          git config --global user.email 'bot@renovateapp.com'
-          git config --global user.name  'Renovate Bot'
-          python --version
-          pip --version
-
-      - name: Installing dependencies
-        run: make install
-
-      - name: Run Prettier
-        run: yarn prettier
-
-      - name: Run shellcheck
-        uses: reviewdog/action-shellcheck@66c9a47bf02255b250284a82251cb4cadf5043f5 # tag=v1.15.0
-        with:
-          reporter: github-pr-review
-          filter_mode: nofilter
-          path: |
-            bin
-            .husky
-          pattern: '*.sh'
-          check_all_files_with_shebangs: 'true'
-
-      - name: Prepare docs
-        run: make prepare
-
-      - name: Build docs
-        run: mkdocs build
-
-      - uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
-        with:
-          name: site
-          path: site
-          if-no-files-found: error
-
       - name: Cypress run
         uses: cypress-io/github-action@31b3f686c1ee05fb7390cc106d1f09eb83919a3c # tag=v3.2.0
         with:
@@ -90,7 +28,3 @@ jobs:
           # we have already installed all dependencies above
           install: false
         timeout-minutes: 3
-
-      - name: Publish docs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: mkdocs gh-deploy --force
